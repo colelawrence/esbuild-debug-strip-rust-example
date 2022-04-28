@@ -1,53 +1,56 @@
 use std::env;
 use std::fs;
+use std::io;
 use std::process;
 
+mod typescript_source;
+
+use typescript_source::TypeScriptSource;
+
 fn main() {
-    let mut args = env::args().skip(1);
-    // let project_root_path = args
-    //     .next()
-    //     .expect("expected first argument for the project root.");
-    let file_path = args
+    let source_path = env::args()
+        .skip(1)
         .next()
         .expect("expected first argument for the path for the file.");
 
-    let file_contents = match fs::read_to_string(&file_path) {
+    let file_contents = match fs::read_to_string(&source_path) {
         Ok(value) => value,
         Err(err) => {
-            eprintln!("Failed to read {file_path:?}: {err}");
+            eprintln!("Failed to read {source_path:?}: {err}");
             process::exit(err.raw_os_error().unwrap_or(1));
         }
     };
 
-    let mut ms = magic_string::MagicString::new(&file_contents);
-    if let Some(idx) = file_contents.find("console") {
-        ms.remove(idx as i64, (idx + 7) as i64)
-            .expect("remove console");
+    let mut ts = TypeScriptSource::new(&source_path, &file_contents);
+
+    ignore_console_log(&mut ts);
+    replace_dev_with_process_node_env_check(&mut ts);
+
+    // print
+    ts.write_with_inline_source_map(&mut io::stdout())
+}
+
+fn replace_dev_with_process_node_env_check(ts: &mut TypeScriptSource<'_>) {
+    for (idx, matched_str) in ts.original.match_indices("__DEV__") {
+        ts.ms
+            .remove(idx as i64, (idx + matched_str.len()) as i64)
+            .expect("remove __DEV__");
+        ts.ms
+            .append_left(idx as u32, "process.env.NODE_ENV !== 'production'")
+            .expect("append left");
     }
-    // let source_map =
-    //     match parcel_sourcemap::SourceMap::from_buffer(&project_root_path, &file_contents) {
-    //         Ok(value) => value,
-    //         Err(err) => {
-    //             eprintln!(
-    //                 "Failed to create a sourcefile from input {file_path:?} {}:\n{:?}",
-    //                 err.reason
-    //                     .map_or_else(String::new, |reason| format!("\"{reason}\"")),
-    //                 err.error_type
-    //             );
-    //             process::exit(1);
-    //         }
-    //     };
+}
 
-    // ms.
+fn ignore_console_log(ts: &mut TypeScriptSource<'_>) {
+    for (idx, _) in ts.original.match_indices("console") {
+        ts.ms
+            .append_left(idx as u32, "undefined && ")
+            .expect("append left");
+    }
 
-    println!("{}", ms.to_string());
-    let gen_opts = {
-        let mut opts = magic_string::GenerateDecodedMapOptions::default();
-        opts.file = Some(file_path);
-        opts.include_content = true;
-
-        opts
-    };
-    let map = ms.generate_map(gen_opts).expect("generated map");
-    println!("//# sourceMappingURL={}", map.to_url().expect("map to url"));
+    for (idx, _) in ts.original.match_indices("dev.") {
+        ts.ms
+            .append_left(idx as u32, "undefined && ")
+            .expect("append left");
+    }
 }
