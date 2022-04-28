@@ -39,6 +39,10 @@ const theatreStripPlugin = {
 export default theatreStripPlugin;
 
 /**
+ * Written to replace execa as a dependency so there were no node.js deps required.
+ *
+ * Referenced https://gist.github.com/leommoore/4484379.
+ *
  * @param {string} command
  * @param {import("child_process").ExecOptions} [execOptions]
  * @returns {Promise<{ stdout: string }>}

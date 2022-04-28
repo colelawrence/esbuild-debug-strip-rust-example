@@ -7,4 +7,3 @@ edition = "2021"
 
 [dependencies]
 magic_string = "0.3.4"
-parcel_sourcemap = "2.0.2"

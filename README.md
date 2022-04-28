@@ -12,7 +12,8 @@ Approach advantages:
  * Technically, we can easily access Tree-Sitter for pre-parsing before replacements
     * e.g. replace comments in styled css blocks
 
-## Inspiration
+## Resources
 
-https://github.com/jaredpalmer/tsdx#development-only-expressions--treeshaking
-https://esbuild.github.io/plugins/#on-load-arguments
+ * https://github.com/jaredpalmer/tsdx#development-only-expressions--treeshaking
+ * https://esbuild.github.io/plugins/#on-load-arguments
+ * https://sokra.github.io/source-map-visualization/#custom
